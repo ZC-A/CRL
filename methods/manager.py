@@ -312,7 +312,7 @@ class Manager(object):
                     train_data_for_memory += memorized_samples[relation]
                 
                 for relation in temp_mem.keys():
-                    train_data_for_memory += memorized_samples[relation]
+                    train_data_for_memory += temp_mem[relation]
 
                 #feat_mem = []
                 #proto_mem = []
@@ -325,7 +325,7 @@ class Manager(object):
                 #feat_mem = torch.cat(feat_mem, dim=0)
                 #temp_proto = torch.stack(proto_mem, dim=0)
                 
-                for relation in memorized_samples:
+                for relation in memorized_samples.keys():
                     protos4eval.append(get_proto(config, encoder, memorized_samples[relation]))
                 protos4eval = torch.cat(protos4eval, dim=0).detach()
                 '''
