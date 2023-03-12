@@ -161,6 +161,7 @@ class Manager(object):
                 else:
                    loss1 = 0.0
 
+
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 if isinstance(loss1, float):
