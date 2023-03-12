@@ -66,7 +66,6 @@ class Manager(object):
     
     def get_optimizer(self, args, encoder, attention=None):
         print('Use {} optim!'.format(args.optim))
-        '''
         def set_param(module, lr, decay=0):
             parameters_to_optimize = list(module.named_parameters())
             no_decay = ['undecay']
@@ -78,16 +77,6 @@ class Manager(object):
             ]
             return parameters_to_optimize
         params = set_param(encoder, args.learning_rate)
-        '''
-        if attention:
-          optimizer = optim.Adam([
-          {'params': encoder.parameters(), 'lr': args.learning_rate}
-          #{'params': attention.parameters(), 'lr': 0.0001}
-          ])
-        else:
-          optimizer = optim.Adam([
-          {'params': encoder.parameters(), 'lr': args.learning_rate}
-          ])
         return optimizer
     def train_simple_model(self, args, encoder, training_data, epochs):
 
