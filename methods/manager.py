@@ -269,12 +269,15 @@ class Manager(object):
 
                 protos4eval = []
                 featrues4eval = []
+                
+                temp_mem = {}
+                temp_protos = []
                 self.lbs = []
-                for relation in history_relation:
+                for relation in seen_relations:
                     if relation not in current_relations:
                         # generate previous proto
                         protos, featrues = self.get_proto(args, encoder, memorized_samples[relation])
-                        protos4eval.append(protos)
+                        temp_protos.append(protos)
                         featrues4eval.append(featrues)
 
                 train_data_for_initial = []
@@ -299,26 +302,33 @@ class Manager(object):
                 #if len(memorized_samples)>0:
                     # select current task sample
                 for relation in current_relations:
-                    memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
+                    temp_mem[relation], _, _ = self.select_data(args, encoder, training_data[relation])
+                    protos, featrues = self.get_proto(args, encoder, temp_mem[relation])
+                    temp_protos.append(protos)
+                temp_protos = torch.cat(temp_protos, dim=0).detach()
                 
                 train_data_for_memory = []
-                for relation in history_relation:
-                    train_data_for_memory += memorized_samples[relation]
-                
                 for relation in memorized_samples.keys():
                     train_data_for_memory += memorized_samples[relation]
+                
+                for relation in temp_mem.keys():
+                    train_data_for_memory += memorized_samples[relation]
 
-                feat_mem = []
-                proto_mem = []
+                #feat_mem = []
+                #proto_mem = []
 
                 for relation in current_relations:
-                    _, feat, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    feat_mem.append(feat)
-                    proto_mem.append(temp_proto)
+                    memorized_samples[relation], feat, temp_proto = self.select_data(args, encoder, training_data[relation])
+                    #feat_mem.append(feat)
+                    #proto_mem.append(temp_proto)
 
-                feat_mem = torch.cat(feat_mem, dim=0)
-                temp_proto = torch.stack(proto_mem, dim=0)
+                #feat_mem = torch.cat(feat_mem, dim=0)
+                #temp_proto = torch.stack(proto_mem, dim=0)
                 
+                for relation in memorized_samples:
+                    protos4eval.append(get_proto(config, encoder, memorized_samples[relation]))
+                protos4eval = torch.cat(protos4eval, dim=0).detach()
+                '''
                 if protos4eval:
                     
                     protos4eval = torch.cat(protos4eval, dim=0).detach()
@@ -326,10 +336,11 @@ class Manager(object):
 
                 else:
                     protos4eval = temp_proto.to(args.device)
+                '''
                 proto4repaly = protos4eval.clone()
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, attention, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
+                self.train_mem_model(args, encoder, attention, train_data_for_memory, temp_protos, args.step2_epochs, seen_relations)
 
 
                 test_data_1 = []
@@ -340,8 +351,8 @@ class Manager(object):
                 for relation in seen_relations:
                     test_data_2 += historic_test_data[relation]
 
-                cur_acc = self.evaluate_strict_model(args, encoder, attention, test_data_1, protos4eval, featrues4eval,seen_relations)
-                total_acc = self.evaluate_strict_model(args, encoder, attention, test_data_2, protos4eval, featrues4eval,seen_relations)
+                cur_acc = self.evaluate_strict_model(args, encoder, attention, test_data_1, protos4eval, featrues4eval, seen_relations)
+                total_acc = self.evaluate_strict_model(args, encoder, attention, test_data_2, protos4eval, featrues4eval, seen_relations)
 
                 print(f'Restart Num {i+1}')
                 print(f'task--{steps + 1}:')
