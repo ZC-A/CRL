@@ -116,13 +116,11 @@ class Manager(object):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
     def train_mem_model(self, args, encoder, attention, mem_data, proto_mem, epochs, seen_relations):
         history_nums = len(seen_relations) - args.rel_per_task
-        '''
         if len(proto_mem)>0:
             
             proto_mem = F.normalize(proto_mem, p = 2, dim=1)
             dist = dot_dist(proto_mem, proto_mem)
             dist = dist.to(args.device)
-        '''
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
         encoder.train()
         attention.train()
@@ -147,7 +145,6 @@ class Manager(object):
                 #hidden = attention(hidden, mem_batch)
                 hidden = reps
 
-                '''
                 need_ratio_compute = ind < history_nums * args.num_protos
                 total_need = need_ratio_compute.sum()
                 
@@ -162,17 +159,14 @@ class Manager(object):
                     loss1 = self.kl_div_loss(gold_dist, this_dist, t=args.kl_temp)
                     loss1.backward(retain_graph=True)
                 else:
-                  '''
-                loss1 = 0.0
+                   loss1 = 0.0
 
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
-                '''
                 if isinstance(loss1, float):
                     kl_losses.append(loss1)
                 else:
                     kl_losses.append(loss1.item())
-                '''
                 loss = cl_loss
                 if isinstance(loss, float):
                     losses.append(loss)
@@ -187,7 +181,6 @@ class Manager(object):
                 td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
-                torch.nn.utils.clip_grad_norm_(attention.parameters(), args.max_grad_norm)
                 optimizer.step()
                 
                 # update moemnt
