@@ -326,7 +326,8 @@ class Manager(object):
                 #temp_proto = torch.stack(proto_mem, dim=0)
                 
                 for relation in memorized_samples.keys():
-                    protos4eval.append(get_proto(config, encoder, memorized_samples[relation]))
+                    protos, features = self.get_proto(args, config, encoder, memorized_samples[relation])
+                    protos4eval.append(protos)
                 protos4eval = torch.cat(protos4eval, dim=0).detach()
                 '''
                 if protos4eval:
