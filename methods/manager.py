@@ -77,6 +77,13 @@ class Manager(object):
             ]
             return parameters_to_optimize
         params = set_param(encoder, args.learning_rate)
+        if args.optim == 'adam':
+            pytorch_optim = optim.Adam
+        else:
+            raise NotImplementedError
+        optimizer = pytorch_optim(
+            params
+        )
         return optimizer
     def train_simple_model(self, args, encoder, training_data, epochs):
 
