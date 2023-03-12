@@ -104,7 +104,7 @@ class Manager(object):
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
-                loss = self.moment.loss(hidden, labels)
+                loss = self.moment.loss(reps, labels)
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
@@ -112,7 +112,7 @@ class Manager(object):
                 optimizer.step()
                 # update moemnt
                 if is_mem:
-                    self.moment.update_mem(ind, hidden.detach())
+                    self.moment.update_mem(ind, reps.detach())
                 else:
                     self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
@@ -129,7 +129,7 @@ class Manager(object):
         '''
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
         encoder.train()
-        #attention.train()
+        attention.train()
         temp_rel2id = [self.rel2id[x] for x in seen_relations]
         map_relid2tempid = {k:v for v, k in enumerate(temp_rel2id)}
         map_tempid2relid = {k:v for k, v in map_relid2tempid.items()}
@@ -149,7 +149,7 @@ class Manager(object):
                 mem_batch.unsqueeze(0)
                 mem_batch = mem_batch.expand(len(tokens), -1, -1)
                 #hidden = attention(hidden, mem_batch)
-                #hidden = reps
+                hidden = reps
 
                 '''
                 need_ratio_compute = ind < history_nums * args.num_protos
@@ -183,7 +183,7 @@ class Manager(object):
                     td.set_postfix(loss = np.array(losses).mean())
                     # update moemnt
                     if is_mem:
-                        self.moment.update_mem(ind, hidden.detach(), hidden.detach())
+                        self.moment.update_mem(ind, reps.detach(), hidden.detach())
                     else:
                         self.moment.update(ind, hidden.detach())
                     continue
@@ -196,9 +196,9 @@ class Manager(object):
                 
                 # update moemnt
                 if is_mem:
-                    self.moment.update_mem(ind, hidden.detach())
+                    self.moment.update_mem(ind, reps.detach())
                 else:
-                    self.moment.update(ind, hidden.detach())
+                    self.moment.update(ind, reps.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
