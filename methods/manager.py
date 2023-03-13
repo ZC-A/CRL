@@ -143,8 +143,8 @@ class Manager(object):
 
                 need_ratio_compute = ind < history_nums * args.num_protos
                 total_need = need_ratio_compute.sum()
-                print(need_ratio_compute)
-                print(total_need)
+                #print(need_ratio_compute)
+                #print(total_need)
                 if total_need >0 :
                     # Knowledge Distillation for Relieve Forgetting
                     need_ind = ind[need_ratio_compute]
