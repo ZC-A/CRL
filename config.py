@@ -48,7 +48,7 @@ class Param:
         parser.add_argument("--temp", default=0.1, type=float)
 
         # The projection head outputs dimensions
-        parser.add_argument("--feat_dim", default=64, type=int)
+        parser.add_argument("--feat_dim", default=768, type=int)
 
         # Temperature parameter in KL
         parser.add_argument("--kl_temp", default=10, type=float)
