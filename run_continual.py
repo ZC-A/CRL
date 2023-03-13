@@ -1,4 +1,3 @@
-
 import torch
 from config import Param
 from methods.utils import setup_seed
