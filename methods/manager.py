@@ -100,7 +100,7 @@ class Manager(object):
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
-                loss = self.moment.loss(reps, labels)
+                loss = self.moment.loss(hidden, labels)
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
@@ -108,9 +108,9 @@ class Manager(object):
                 optimizer.step()
                 # update moemnt
                 if is_mem:
-                    self.moment.update_mem(ind, reps.detach())
+                    self.moment.update_mem(ind, hidden.detach())
                 else:
-                    self.moment.update(ind, reps.detach())
+                    self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
@@ -118,18 +118,18 @@ class Manager(object):
         history_nums = len(seen_relations) - args.rel_per_task
         if len(proto_mem)>0:
             
-            proto_mem = F.normalize(proto_mem, p =2, dim=1)
+            proto_mem = F.normalize(proto_mem, p = 2, dim = 1)
             dist = dot_dist(proto_mem, proto_mem)
             dist = dist.to(args.device)
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
         encoder.train()
         temp_rel2id = [self.rel2id[x] for x in seen_relations]
-        map_relid2tempid = {k:v for v,k in enumerate(temp_rel2id)}
+        map_relid2tempid = {k:v for v, k in enumerate(temp_rel2id)}
         map_tempid2relid = {k:v for k, v in map_relid2tempid.items()}
         optimizer = self.get_optimizer(args, encoder)
         def train_data(data_loader_, name = "", is_mem = False):
             losses = []
-            kl_losses = []
+            cross_losses = []
             td = tqdm(data_loader_, desc=name)
             for step, batch_data in enumerate(td):
 
@@ -137,8 +137,8 @@ class Manager(object):
                 labels, tokens, ind = batch_data
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
-                zz, reps = encoder.bert_forward(tokens)
-                hidden = reps
+                hidden, reps = encoder.bert_forward(tokens)
+                #hidden = reps
 
 
                 need_ratio_compute = ind < history_nums * args.num_protos
@@ -153,41 +153,41 @@ class Manager(object):
                     gold_dist = dist[temp_labels]
                     current_proto = self.moment.get_mem_proto()[:history_nums]
                     this_dist = dot_dist(hidden[need_ratio_compute], current_proto.to(args.device))
-                    loss1 = self.kl_div_loss(gold_dist, this_dist, t=args.kl_temp)
-                    loss1.backward(retain_graph=True)
+                    cross_loss = self.div_loss(gold_dist, this_dist, t=args.kl_temp)
+                    cross_loss.backward(retain_graph=True)
                 else:
-                    loss1 = 0.0
+                    cross_loss = 0.0
                 #  Contrastive Replay
-                cl_loss = self.moment.loss(reps, labels, is_mem=True, mapping=map_relid2tempid)
-                if isinstance(loss1, float):
-                    kl_losses.append(loss1)
+                cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
+                if isinstance(cross_loss, float):
+                    cross_losses.append(cross_loss)
                 else:
-                   kl_losses.append(loss1.item())
+                   cross_losses.append(cross_loss.item())
                 loss = cl_loss
                 if isinstance(loss, float):
                     losses.append(loss)
-                    td.set_postfix(loss = np.array(losses).mean(), kl_loss = np.array(kl_losses).mean())
+                    td.set_postfix(loss = np.array(losses).mean(), cross_loss = np.array(cross_losses).mean())
                     # update moemnt
                     if is_mem:
-                        self.moment.update_mem(ind, reps.detach(), hidden.detach())
+                        self.moment.update_mem(ind, hidden.detach(), hidden.detach())
                     else:
-                        self.moment.update(ind, reps.detach())
+                        self.moment.update(ind, hidden.detach())
                     continue
                 losses.append(loss.item())
-                td.set_postfix(loss = np.array(losses).mean(),  kl_loss = np.array(kl_losses).mean())
+                td.set_postfix(loss = np.array(losses).mean(),  cross_loss = np.array(cross_losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
                 
                 # update moemnt
                 if is_mem:
-                    self.moment.update_mem(ind, reps.detach())
+                    self.moment.update_mem(ind, hidden.detach())
                 else:
-                    self.moment.update(ind, reps.detach())
+                    self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
-    def kl_div_loss(self, x1, x2, t=10):
+    def div_loss(self, x1, x2, t=10):
 
         batch_dist = F.softmax(t * x1, dim=1)
         temp_dist = F.softmax(t * x2, dim=1)
@@ -196,7 +196,7 @@ class Manager(object):
         return loss
 
     @torch.no_grad()
-    def evaluate_strict_model(self, args, encoder, test_data, protos4eval, featrues4eval, seen_relations):
+    def evaluate_strict_model(self, args, encoder, test_data, protos4eval, seen_relations):
         data_loader = get_data_loader(args, test_data, batch_size=1)
         encoder.eval()
         n = len(test_data)
@@ -319,8 +319,8 @@ class Manager(object):
                 for relation in seen_relations:
                     test_data_2 += historic_test_data[relation]
 
-                cur_acc = self.evaluate_strict_model(args, encoder, test_data_1, protos4eval, featrues4eval,seen_relations)
-                total_acc = self.evaluate_strict_model(args, encoder, test_data_2, protos4eval, featrues4eval,seen_relations)
+                cur_acc = self.evaluate_strict_model(args, encoder, test_data_1, protos4eval, seen_relations)
+                total_acc = self.evaluate_strict_model(args, encoder, test_data_2, protos4eval, seen_relations)
 
                 print(f'Restart Num {i+1}')
                 print(f'task--{steps + 1}:')
