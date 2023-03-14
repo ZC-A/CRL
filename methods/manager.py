@@ -108,9 +108,9 @@ class Manager(object):
                 optimizer.step()
                 # update moemnt
                 if is_mem:
-                    self.moment.update_mem(ind, hidden.detach())
+                    self.moment.update_mem(ind, reps.detach())
                 else:
-                    self.moment.update(ind, hidden.detach())
+                    self.moment.update(ind, reps.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
@@ -138,13 +138,14 @@ class Manager(object):
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
-                #hidden = reps
+                hidden = reps
 
 
                 need_ratio_compute = ind < history_nums * args.num_protos
                 total_need = need_ratio_compute.sum()
                 #print(need_ratio_compute)
                 #print(total_need)
+                '''
                 if total_need >0 :
                     # Knowledge Distillation for Relieve Forgetting
                     need_ind = ind[need_ratio_compute]
@@ -157,6 +158,8 @@ class Manager(object):
                     cross_loss.backward(retain_graph=True)
                 else:
                     cross_loss = 0.0
+                '''
+                cross_loss = 0
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 if isinstance(cross_loss, float):
