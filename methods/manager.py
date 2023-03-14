@@ -261,37 +261,41 @@ class Manager(object):
                 self.moment.init_moment(args, encoder, train_data_for_initial, is_memory=False)
                 self.train_simple_model(args, encoder, train_data_for_initial, args.step1_epochs)
                 # repaly
+                '''
                 if len(memorized_samples)>0:
-                    # select current task sample
-                    for relation in current_relations:
-                        memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
-                    
-                    train_data_for_memory = []
-                    for relation in history_relation:
-                        train_data_for_memory += memorized_samples[relation]
-                    
-                    self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                    self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
-                feat_mem = []
+                '''
+                # select current task sample
+                for relation in current_relations:
+                    memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
+
+                train_data_for_memory = []
+                for relation in history_relation:
+                    train_data_for_memory += memorized_samples[relation]
+                for relation in current_relations:
+                    train_data_for_memory += memorized_samples[relation]
+
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
+                #feat_mem = []
                 proto_mem = []
 
                 for relation in current_relations:
-                    memorized_samples[relation], feat, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    feat_mem.append(feat)
+                    memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
+                    #feat_mem.append(feat)
                     proto_mem.append(temp_proto)
 
-                feat_mem = torch.cat(feat_mem, dim=0)
+                #feat_mem = torch.cat(feat_mem, dim=0)
                 temp_proto = torch.stack(proto_mem, dim=0)
 
                 protos4eval = []
-                featrues4eval = []
+                #featrues4eval = []
                 self.lbs = []
                 for relation in history_relation:
                     if relation not in current_relations:
                         
                         protos, featrues = self.get_proto(args, encoder, memorized_samples[relation])
                         protos4eval.append(protos)
-                        featrues4eval.append(featrues)
+                        #featrues4eval.append(featrues)
                 
                 if protos4eval:
                     
