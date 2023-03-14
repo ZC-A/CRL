@@ -159,7 +159,7 @@ class Manager(object):
                 else:
                     cross_loss = 0.0
                 '''
-                cross_loss = 0
+                cross_loss = 0.0
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 if isinstance(cross_loss, float):
