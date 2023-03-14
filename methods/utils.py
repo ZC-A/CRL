@@ -50,8 +50,8 @@ class Moment:
 
                 labels, tokens, ind = batch_data
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
-                hidden, reps = encoder.bert_forward(tokens)
-                self.update(ind, hidden.detach())
+                _, reps = encoder.bert_forward(tokens)
+                self.update(ind, reps.detach())
                 lbs.append(labels)
             lbs = torch.cat(lbs)
             self.labels = lbs.to(args.device)
@@ -66,7 +66,7 @@ class Moment:
                 labels, tokens, ind = batch_data
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
-                self.update_mem(ind, hidden.detach(), hidden.detach())
+                self.update_mem(ind, reps.detach(), hidden.detach())
                 lbs.append(labels)
             lbs = torch.cat(lbs)
             self.mem_labels = lbs.to(args.device)
