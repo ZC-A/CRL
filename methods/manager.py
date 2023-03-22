@@ -2,6 +2,7 @@ from dataloaders.sampler import data_sampler
 from dataloaders.data_loader import get_data_loader
 from .model import Encoder
 from .utils import Moment, dot_dist
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -247,6 +248,7 @@ class Manager(object):
             
             history_relation = []
             proto4repaly = []
+            start = time.time()
             for steps, (training_data, valid_data, test_data, current_relations, historic_test_data, seen_relations) in enumerate(sampler):
 
                 print(current_relations)
@@ -317,7 +319,7 @@ class Manager(object):
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
                 '''
-
+                
                 test_data_1 = []
                 for relation in current_relations:
                     test_data_1 += test_data[relation]
@@ -325,10 +327,10 @@ class Manager(object):
                 test_data_2 = []
                 for relation in seen_relations:
                     test_data_2 += historic_test_data[relation]
-
+                   
                 cur_acc = self.evaluate_strict_model(args, encoder, test_data_1, protos4eval, seen_relations)
                 total_acc = self.evaluate_strict_model(args, encoder, test_data_2, protos4eval, seen_relations)
-
+                
                 print(f'Restart Num {i+1}')
                 print(f'task--{steps + 1}:')
                 print(f'current test acc:{cur_acc}')
@@ -339,3 +341,5 @@ class Manager(object):
                 print(test_cur)
                 print(test_total)
                 del self.moment
+            end = time.time()
+            print(f'total time:{end - start}')
