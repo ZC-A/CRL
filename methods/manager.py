@@ -116,12 +116,8 @@ class Manager(object):
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
     def train_mem_model(self, args, encoder, mem_data, proto_mem, epochs, seen_relations):
-        history_nums = len(seen_relations) - args.rel_per_task
-        if len(proto_mem)>0:
-            
-            proto_mem = F.normalize(proto_mem, p = 2, dim = 1)
-            dist = dot_dist(proto_mem, proto_mem)
-            dist = dist.to(args.device)
+        
+        
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
         encoder.train()
         temp_rel2id = [self.rel2id[x] for x in seen_relations]
@@ -144,33 +140,14 @@ class Manager(object):
 
                 need_ratio_compute = ind < history_nums * args.num_protos
                 total_need = need_ratio_compute.sum()
-                #print(need_ratio_compute)
-                #print(total_need)
-                '''
-                if total_need >0 :
-                    # Knowledge Distillation for Relieve Forgetting
-                    need_ind = ind[need_ratio_compute]
-                    need_labels = labels[need_ratio_compute]
-                    temp_labels = [map_relid2tempid[x.item()] for x in need_labels]
-                    gold_dist = dist[temp_labels]
-                    current_proto = self.moment.get_mem_proto()[:history_nums]
-                    this_dist = dot_dist(hidden[need_ratio_compute], current_proto.to(args.device))
-                    cross_loss = self.div_loss(gold_dist, this_dist, t=args.kl_temp)
-                    cross_loss.backward(retain_graph=True)
-                else:
-                    cross_loss = 0.0
-                '''
-                cross_loss = 0.0
+                
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
-                if isinstance(cross_loss, float):
-                    cross_losses.append(cross_loss)
-                else:
-                   cross_losses.append(cross_loss.item())
+                
                 loss = cl_loss
                 if isinstance(loss, float):
                     losses.append(loss)
-                    td.set_postfix(loss = np.array(losses).mean(), cross_loss = np.array(cross_losses).mean())
+                    td.set_postfix(loss = np.array(losses).mean()))
                     # update moemnt
                     if is_mem:
                         self.moment.update_mem(ind, hidden.detach(), hidden.detach())
@@ -178,7 +155,7 @@ class Manager(object):
                         self.moment.update(ind, hidden.detach())
                     continue
                 losses.append(loss.item())
-                td.set_postfix(loss = np.array(losses).mean(),  cross_loss = np.array(cross_losses).mean())
+                td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
@@ -191,13 +168,6 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
-    def div_loss(self, x1, x2, t=10):
-
-        batch_dist = F.softmax(t * x1, dim=1)
-        temp_dist = F.softmax(t * x2, dim=1)
-        #loss = F.kl_div(temp_dist, batch_dist, reduction="batchmean")
-        loss = F.cross_entropy(batch_dist, temp_dist)
-        return loss
 
     @torch.no_grad()
     def evaluate_strict_model(self, args, encoder, test_data, protos4eval, seen_relations):
@@ -278,26 +248,26 @@ class Manager(object):
 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
-                #feat_mem = []
+            
                 proto_mem = []
 
                 for relation in current_relations:
                     memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    #feat_mem.append(feat)
+                    
                     proto_mem.append(temp_proto)
 
-                #feat_mem = torch.cat(feat_mem, dim=0)
+                
                 temp_proto = torch.stack(proto_mem, dim=0)
 
                 protos4eval = []
-                #featrues4eval = []
+                
                 self.lbs = []
                 for relation in history_relation:
                     if relation not in current_relations:
                         
                         protos, featrues = self.get_proto(args, encoder, memorized_samples[relation])
                         protos4eval.append(protos)
-                        #featrues4eval.append(featrues)
+                        
                 
                 if protos4eval:
                     
@@ -307,18 +277,6 @@ class Manager(object):
                 else:
                     protos4eval = temp_proto.to(args.device)
                 proto4repaly = protos4eval.clone()
-                '''
-                #for relation in current_relations:
-
-                 #       memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
-
-                train_data_for_memory = []
-                for relation in history_relation:
-                    train_data_for_memory += memorized_samples[relation]
-
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
-                '''
                 
                 test_data_1 = []
                 for relation in current_relations:
