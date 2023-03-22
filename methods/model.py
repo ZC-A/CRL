@@ -13,7 +13,8 @@ class Encoder(nn.Module):
         self.head = nn.Sequential(
                 nn.Linear(dim_in, dim_in),
                 nn.ReLU(inplace=True),
-                nn.Linear(dim_in, args.feat_dim)
+                nn.Linear(dim_in, args.feat_dim),
+                nn.Dropout(0.2)
             )
     def bert_forward(self, x):
         out = self.encoder(x)
