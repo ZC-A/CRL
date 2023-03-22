@@ -15,7 +15,7 @@ class Bert_Encoder(nn.Module):
         # the dimension for the final outputs
         self.output_size = config.encoder_output_size
         self.out_dim = self.output_size
-        self.dropout = nn.Dropout(config.drop)
+      
         # find which encoding is used
         if config.pattern in ['standard', 'entity_marker']:
             self.pattern = config.pattern
@@ -68,7 +68,6 @@ class Bert_Encoder(nn.Module):
             output = output.view(output.size()[0], -1) # [B,N] --> [B,H*2]
             
             output = self.linear_transform(output)
-            output = self.dropout(output)
 
 
         return output
