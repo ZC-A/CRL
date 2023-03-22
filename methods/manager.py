@@ -126,7 +126,6 @@ class Manager(object):
         optimizer = self.get_optimizer(args, encoder)
         def train_data(data_loader_, name = "", is_mem = False):
             losses = []
-            cross_losses = []
             td = tqdm(data_loader_, desc=name)
             for step, batch_data in enumerate(td):
 
@@ -136,10 +135,6 @@ class Manager(object):
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
                 hidden = reps
-
-
-                need_ratio_compute = ind < history_nums * args.num_protos
-                total_need = need_ratio_compute.sum()
                 
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
@@ -233,9 +228,7 @@ class Manager(object):
                 self.moment.init_moment(args, encoder, train_data_for_initial, is_memory=False)
                 self.train_simple_model(args, encoder, train_data_for_initial, args.step1_epochs)
                 # repaly
-                '''
-                if len(memorized_samples)>0:
-                '''
+             
                 # select current task sample
                 for relation in current_relations:
                     memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
