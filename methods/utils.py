@@ -14,22 +14,6 @@ class Moment:
         self.memlen = 0
         self.sample_k = 500
         self.temperature= args.temp
-    def get_mem_proto(self):
-        c = self._compute_centroids_ind()
-        return c
-    def _compute_centroids_ind(self):
-        cinds = []
-        for x in self.mem_labels:
-            if x.item() not in cinds:
-                cinds.append(x.item())
-
-        num = len(cinds)
-        feats = self.mem_features
-        centroids = torch.zeros((num, feats.size(1)), dtype=torch.float32, device=feats.device)
-        for i, c in enumerate(cinds):
-            ind = np.where(self.mem_labels.cpu().numpy() == c)[0]
-            centroids[i, :] = F.normalize(feats[ind, :].mean(dim=0), p=2, dim=0)
-        return centroids
 
     def update(self, ind, feature, init=False):
         self.features[ind] = feature
