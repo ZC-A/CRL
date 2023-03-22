@@ -142,7 +142,7 @@ class Manager(object):
                 loss = cl_loss
                 if isinstance(loss, float):
                     losses.append(loss)
-                    td.set_postfix(loss = np.array(losses).mean()))
+                    td.set_postfix(loss = np.array(losses).mean())
                     # update moemnt
                     if is_mem:
                         self.moment.update_mem(ind, hidden.detach(), hidden.detach())
