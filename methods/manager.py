@@ -1,7 +1,7 @@
 from dataloaders.sampler import data_sampler
 from dataloaders.data_loader import get_data_loader
 from .model import Encoder
-from .utils import Moment, dot_dist
+from .utils import Moment, dot_dist, get_aca_data
 import time
 import torch
 import torch.nn as nn
