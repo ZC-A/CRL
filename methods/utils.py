@@ -161,8 +161,8 @@ def get_aca_data(args, training_data, current_relations, tokenizer):
 
             aca_data.append({
                     'relation': rel_id,
-                    'tokens': token,
-                    'string': tokenizer.decode(token)
+                    'tokens': token
+                    #'string': tokenizer.decode(token)
                 })
             for index in [30522, 30523, 30524, 30525]:
                 assert index in token and token.count(index) == 1
