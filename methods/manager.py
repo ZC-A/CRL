@@ -226,6 +226,8 @@ class Manager(object):
                 # no memory. first train with current task
                 self.moment = Moment(args)
                 self.moment.init_moment(args, encoder, train_data_for_initial, is_memory=False)
+                add_aca_data = get_aca_data(args, deepcopy(training_data), current_relations, encoder)
+                train_data_for_initial += add_aca_data
                 self.train_simple_model(args, encoder, train_data_for_initial, args.step1_epochs)
                 # repaly
              
