@@ -112,11 +112,11 @@ def setup_seed(seed):
     torch.backends.cudnn.deterministic = True
 
     
-def get_aca_data(config, training_data, current_relations, tokenizer):
+def get_aca_data(args, training_data, current_relations, tokenizer):
     
-    rel_id = config.num_of_relation
+    rel_id = args.num_of_relation
     aca_data = []
-    for rel1, rel2 in zip(current_relations[:config.rel_per_task // 2], current_relations[config.rel_per_task // 2:]):
+    for rel1, rel2 in zip(current_relations[:args.rel_per_task // 2], current_relations[args.rel_per_task // 2:]):
         datas1 = training_data[rel1]
         datas2 = training_data[rel2]
         L = 5
