@@ -106,6 +106,7 @@ def osdist(x, c):
     pairwise_distances = torch.mul(pairwise_distances, ~error_mask)
 
     return pairwise_distances
+
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -113,60 +114,3 @@ def setup_seed(seed):
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    
-def get_aca_data(args, training_data, current_relations, tokenizer):
-    
-    rel_id = args.num_of_relation
-    aca_data = []
-    for rel1, rel2 in zip(current_relations[:args.rel_per_task // 2], current_relations[args.rel_per_task // 2:]):
-        datas1 = training_data[rel1]
-        datas2 = training_data[rel2]
-        L = 5
-        for data1, data2 in zip(datas1, datas2):
-            token1 = data1['tokens'][1:-1][:]
-            e11 = token1.index(30522); e12 = token1.index(30523)
-            e21 = token1.index(30524); e22 = token1.index(30525)
-            if e21 <= e11:
-                continue
-            token1_sub = token1[max(0, e11-L): min(e12+L+1, e21)]
-
-            token2 = data2['tokens'][1:-1][:]
-            e11 = token2.index(30522); e12 = token2.index(30523)
-            e21 = token2.index(30524); e22 = token2.index(30525)
-            if e21 <= e11:
-                continue
-
-            token2_sub = token2[max(e12+1, e21-L): min(e22+L+1, len(token2))]
-
-            token = [101] + token1_sub + token2_sub + [102]
-            aca_data.append({
-                'relation': rel_id,
-                'tokens': token
-                #'string': tokenizer.decode(token)
-            })
-
-            for index in [30522, 30523, 30524, 30525]:
-                assert index in token and token.count(index) == 1
-                
-        rel_id += 1
-
-    for rel in current_relations:
-        if rel in ['P26', 'P3373', 'per:siblings', 'org:alternate_names', 'per:spous', 'per:alternate_names', 'per:other_family']:
-            continue
-
-        for data in training_data[rel]:
-            token = data['tokens'][:]
-            e11 = token.index(30522); e12 = token.index(30523)
-            e21 = token.index(30524); e22 = token.index(30525)
-            token[e11] = 30524; token[e12] = 30525
-            token[e21] = 30522; token[e22] = 30523
-
-            aca_data.append({
-                    'relation': rel_id,
-                    'tokens': token
-                    #'string': tokenizer.decode(token)
-                })
-            for index in [30522, 30523, 30524, 30525]:
-                assert index in token and token.count(index) == 1
-        rel_id += 1
-    return aca_data
