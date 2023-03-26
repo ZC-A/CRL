@@ -44,7 +44,7 @@ class Param:
 
         parser.add_argument("--marker_size", default=4, type=int)
         
-        parser.add_argument("--drop", default=0.05, type=float)
+        parser.add_argument("--drop", default=0.5, type=float)
 
         # Temperature parameter in CL and CR
         parser.add_argument("--temp", default=0.1, type=float)
