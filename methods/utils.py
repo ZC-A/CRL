@@ -73,8 +73,8 @@ class Moment:
                 ct_y = self.labels[sample_id]
                 '''
            # else:
-                ct_x = self.features
-                ct_y = self.labels
+            ct_x = self.features
+            ct_y = self.labels
 
         device = torch.device("cuda") if x.is_cuda else torch.device("cpu")
         dot_product_tempered = torch.mm(x, ct_x.T) / self.temperature  # n * m
