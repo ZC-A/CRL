@@ -103,6 +103,7 @@ class Manager(object):
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
                 loss = self.moment.loss(reps, labels)
+                print(loss)
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
@@ -141,6 +142,7 @@ class Manager(object):
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 
                 loss = cl_loss
+                print(loss)
                 if isinstance(loss, float):
                     losses.append(loss)
                     td.set_postfix(loss = np.array(losses).mean())
