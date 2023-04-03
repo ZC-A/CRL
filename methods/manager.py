@@ -170,7 +170,7 @@ class Manager(object):
                         self.moment.update(ind, hidden.detach())
                     continue
                 losses.append(loss.item())
-                td.set_postfix(loss = np.array(losses).mean(), log_loss = np.arrar(log_losses).mean())
+                td.set_postfix(loss = np.array(losses).mean(), log_loss = np.array(log_losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
