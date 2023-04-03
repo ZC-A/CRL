@@ -195,7 +195,7 @@ class Manager(object):
         optimizer = self.get_optimizer(args, encoder)
         mem_loader = get_data_loader(args, memorized_samples, shuffle=True)
         
-        td = tqdm(data_loader_, desc=name)
+        td = tqdm(mem_loader)
         for step, batch_data in enumerate(td):
 
             labels, tokens, ind = batch_data
