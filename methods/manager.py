@@ -190,7 +190,7 @@ class Manager(object):
             optimizer.zero_grad()
             log_loss.requires_grad = True 
             log_loss.backward()
-            print("proto_learn loss is {np.array(log_losses).mean()}")
+            print(f"proto_learn loss is {np.array(log_losses).mean()}")
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
             optimizer.step()
         for epoch_i in range(epochs):
