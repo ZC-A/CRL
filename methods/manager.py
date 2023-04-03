@@ -135,6 +135,7 @@ class Manager(object):
 
                 optimizer.zero_grad()
                 labels, tokens, ind = batch_data
+                np_lab = int(labels.numpy())
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
@@ -143,10 +144,10 @@ class Manager(object):
                 log_loss = []
                 for i, f in enumerate(fe):
                   
-                  loss = -torch.log(torch.cosine_similarity(f, proto_dict[labels[i]].to(args.device), dim = 0) + 1e-5)
+                  loss = -torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-5)
                     
-                  for relation in memorized_samples:
-                    if relation != label[i]:
+                  for relation in proto_dict.keys():
+                    if relation != np_lab[i]:
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_loss.append(loss)
                 log_loss = torch.cat(tuple([loss.reshape(1) for loss in log_loss]), dim = 0)
