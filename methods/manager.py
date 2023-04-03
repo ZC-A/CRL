@@ -180,7 +180,7 @@ class Manager(object):
                 #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
                 fe, rp = encoder.bert_forward(tokens)
                 #print(proto_dict[current_relation])
-                print(fe.grad_fn)
+                #print(fe.grad_fn)
                 
                 for f in fe:
                   loss = -torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-5)
@@ -190,7 +190,7 @@ class Manager(object):
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
             log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
-            log_losses = torch.mean(torch.sum(log_losses))
+            log_losses = torch.mean(torch.sum(log_losses, dim = 0))
             optimizer.zero_grad()
             print(log_losses)
             log_losses.backward()
