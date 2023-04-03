@@ -183,11 +183,13 @@ class Manager(object):
                 #print(fe.grad_fn)
                 
                 for f in fe:
-                  loss = -torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-5)
+                  curr_proto = self.get_proto(args, encoder, memorized_samples[current_relation])
+                  loss = -torch.log(torch.cosine_similarity(f, curr_proto.to(args.device), dim = 0) + 1e-5)
                     
                   for relation in memorized_samples:
                     if relation != current_relation:
-                      loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
+                      diff_proto = self.get_proto(args, encoder, memorized_samples[relation])
+                      loss +=  -torch.log(1 - torch.cosine_similarity(f, diff_proto.to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
             log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
             log_losses = torch.mean(log_losses)
@@ -256,7 +258,7 @@ class Manager(object):
             
             history_relation = []
             proto4repaly = []
-            proto_dict = {}
+            #proto_dict = {}
             start = time.time()
             for steps, (training_data, valid_data, test_data, current_relations, historic_test_data, seen_relations) in enumerate(sampler):
 
@@ -291,7 +293,7 @@ class Manager(object):
 
                 for relation in current_relations:
                     memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    proto_dict[relation] = temp_proto
+                    #proto_dict[relation] = temp_proto
                     proto_mem.append(temp_proto)
 
                 
@@ -317,7 +319,7 @@ class Manager(object):
                 proto4repaly = protos4eval.clone()
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
+                self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, args.step2_epochs, seen_relations)
                 
                 test_data_1 = []
                 for relation in current_relations:
