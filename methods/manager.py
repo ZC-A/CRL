@@ -12,6 +12,7 @@ import random
 from copy import deepcopy
 from tqdm import tqdm, trange
 from sklearn.cluster import KMeans
+from torch.autograd import Variable
 from .utils import osdist
 class Manager(object):
     def __init__(self, args):
@@ -167,6 +168,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
             
             encoder.train()
+            #loss = torch.randn(1,1).cuda(), requires_grad=True)
             for current_relation in memorized_samples:
                 tokens = []
                 current_tokens = memorized_samples[current_relation]
