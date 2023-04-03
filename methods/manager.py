@@ -118,7 +118,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
-    def train_mem_model(self, args, encoder, mem_data, epochs, seen_relations):
+    def train_mem_model(self, args, encoder, mem_data, memorized_samples, proto_dict, epochs, seen_relations):
         
         
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
@@ -138,7 +138,21 @@ class Manager(object):
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
+                fe = hidden
                 hidden = reps
+                log_loss = []
+                for i, f in enumerate(fe):
+                  
+                  loss = -torch.log(torch.cosine_similarity(f, proto_dict[labels[i]].to(args.device), dim = 0) + 1e-5)
+                    
+                  for relation in memorized_samples:
+                    if relation != label[i]:
+                      loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
+                  log_loss.append(loss)
+                log_loss = torch.cat(tuple([loss.reshape(1) for loss in log_loss]), dim = 0)
+                log_loss = torch.mean(log_loss)
+                log_loss.backward(retain_graph = True)
+                log_losses.append(log_loss.item())
                 
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
@@ -155,7 +169,7 @@ class Manager(object):
                         self.moment.update(ind, hidden.detach())
                     continue
                 losses.append(loss.item())
-                td.set_postfix(loss = np.array(losses).mean())
+                td.set_postfix(loss = np.array(losses).mean(), log_loss = np.arrar(log_losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
@@ -314,7 +328,7 @@ class Manager(object):
                 proto4repaly = protos4eval.clone()
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, args.step2_epochs, seen_relations)
+                self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
                 #self.proto_learn(args, encoder, memorized_samples, proto_dict)
                 test_data_1 = []
                 for relation in current_relations:
