@@ -142,6 +142,7 @@ class Manager(object):
                 fe = hidden
                 hidden = reps
                 log_loss = []
+                '''
                 for i, f in enumerate(fe):
                   
                   loss = -torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-5)
@@ -151,7 +152,7 @@ class Manager(object):
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
                 
-                
+                '''
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 
@@ -178,14 +179,14 @@ class Manager(object):
                 else:
                     self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
-            
+            '''
             optimizer.zero_grad()
             log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
             log_losses = torch.mean(log_losses)
             print(log_losses)
             log_losses.backward()
             optimizer.step()
-            
+            '''
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
     def proto_learn(self, args, encoder, memorized_samples, proto_dict):
