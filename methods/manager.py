@@ -261,7 +261,7 @@ class Manager(object):
             sampler = data_sampler(args=args, seed=args.seed+i*100)
             self.id2rel = sampler.id2rel
             self.rel2id = sampler.rel2id
-            print(self.rel2id)
+            
             # encoder setup
             encoder = Encoder(args=args).to(args.device)
 
