@@ -179,15 +179,15 @@ class Manager(object):
                 fe, rp = encoder.bert_forward(tokens)
                 #print(proto_dict[current_relation])
                 print(fe.grad_fn)
-        
+                
                 for f in fe:
                   loss = -torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-5)
-                  '''
+                    
                   for relation in memorized_samples:
                     if relation != current_relation:
-                      loss += torch.log(torch.tensor(1 - torch.cosine_similarity(f.unsqueeze(0), proto_dict[relation].to(args.device).unsqueeze(0)) + 1e-5))
+                      loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
-                  '''
+                  
                   optimizer.zero_grad()
                   loss.backward()
                   torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
