@@ -118,7 +118,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
-    def train_mem_model(self, args, encoder, mem_data, memorized_samples, proto_dict, epochs, seen_relations):
+    def train_mem_model(self, args, encoder, mem_data, epochs, seen_relations):
         
         
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
@@ -311,7 +311,7 @@ class Manager(object):
                 proto4repaly = protos4eval.clone()
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
+                self.train_mem_model(args, encoder, train_data_for_memory, args.step2_epochs, seen_relations)
                 self.proto_learn(args, encoder, memorized_samples, proto_dict)
                 test_data_1 = []
                 for relation in current_relations:
