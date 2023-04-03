@@ -190,11 +190,11 @@ class Manager(object):
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
                   
-              optimizer.zero_grad()
-              print(loss.mean())
-              loss.mean().backward()
-              torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
-              optimizer.step()
+            optimizer.zero_grad()
+            print(loss.mean())
+            loss.mean().backward()
+            torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+            optimizer.step()
                   
             #log_loss = torch.mean(torch.tensor(log_losses))
             #optimizer.zero_grad()
