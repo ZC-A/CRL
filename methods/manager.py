@@ -171,7 +171,9 @@ class Manager(object):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
     def proto_learn(self, args, encoder, memorized_samples, proto_dict):
             encoder.train()
+            log_losses = []
             #loss = Variable(torch.randn(1,1).cuda(), requires_grad=True)
+            optimizer = self.get_optimizer(args, encoder)
             for current_relation in memorized_samples:
                 tokens = []
                 current_tokens = memorized_samples[current_relation]
