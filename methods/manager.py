@@ -168,7 +168,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
             
             #encoder.train()
-            loss = Variable(torch.randn(1,1).cuda(), requires_grad=True))
+            #loss = Variable(torch.randn(1,1).cuda(), requires_grad=True)
             for current_relation in memorized_samples:
                 tokens = []
                 current_tokens = memorized_samples[current_relation]
@@ -189,10 +189,10 @@ class Manager(object):
                     if relation != current_relation:
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
-                  
+            loss = log.mean(torch.tensor(log_losses)) 
             optimizer.zero_grad()
-            print(loss.mean())
-            loss.mean().backward()
+            print(loss)
+            #loss.mean().backward()
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
             optimizer.step()
                   
