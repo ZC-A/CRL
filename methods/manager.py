@@ -181,10 +181,10 @@ class Manager(object):
         
                 for f in fe:
                   loss = 0.0
-                  loss += torch.log(torch.tensor(F.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)).item() + 1e-5))
+                  loss += torch.log(torch.tensor(torch.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)).item() + 1e-5))
                   for relation in memorized_samples:
                     if relation != current_relation:
-                      loss += torch.log(torch.tensor(1 - F.cosine_similarity(f.unsqueeze(0), proto_dict[relation].to(args.device).unsqueeze(0)).item() + 1e-5))
+                      loss += torch.log(torch.tensor(1 - torch.cosine_similarity(f.unsqueeze(0), proto_dict[relation].to(args.device).unsqueeze(0)).item() + 1e-5))
                   log_losses.append(loss)
             log_loss = torch.mean(torch.tensor(log_losses))
             optimizer.zero_grad()
