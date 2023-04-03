@@ -249,7 +249,7 @@ class Manager(object):
             
             history_relation = []
             proto4repaly = []
-            proto_dict = []
+            proto_dict = {}
             start = time.time()
             for steps, (training_data, valid_data, test_data, current_relations, historic_test_data, seen_relations) in enumerate(sampler):
 
