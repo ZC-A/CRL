@@ -103,7 +103,7 @@ class Manager(object):
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
                 loss = self.moment.loss(reps, labels)
-                print(loss)
+                #print(loss)
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
@@ -117,7 +117,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
-    def train_mem_model(self, args, encoder, mem_data, proto_mem, epochs, seen_relations):
+    def train_mem_model(self, args, encoder, mem_data, memorized_samples, proto_dict, epochs, seen_relations):
         
         
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
@@ -128,6 +128,7 @@ class Manager(object):
         optimizer = self.get_optimizer(args, encoder)
         def train_data(data_loader_, name = "", is_mem = False):
             losses = []
+            log_losses = []
             td = tqdm(data_loader_, desc=name)
             for step, batch_data in enumerate(td):
 
@@ -137,6 +138,10 @@ class Manager(object):
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
                 hidden = reps
+                
+                
+            
+                
                 
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
@@ -164,6 +169,34 @@ class Manager(object):
                 else:
                     self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
+            
+            
+            for current_relation in memorized_samples:
+                tokens = []
+                current_tokens = memorized_samples[current_relation]
+                for token in current_tokens:
+                  tokens.append(torch.tensor(token['tokens']))
+                tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
+                #tokens = [torch.tensor(x['tokens'] for x in current_tokens)]
+                #print(tokens)
+                #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
+                fe, rp = encoder.bert_forward(tokens)
+                #print(proto_dict[current_relation])
+                #print(fe)
+        
+                for f in fe:
+                  loss = 0.0
+                  loss += torch.log(torch.tensor(F.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)).item() + 1e-5))
+                  for relation in memorized_samples:
+                    if relation != current_relation:
+                      loss += torch.log(torch.tensor(1 - F.cosine_similarity(f.unsqueeze(0), proto_dict[relation].to(args.device).unsqueeze(0)).item() + 1e-5))
+                  log_losses.append(loss)
+            log_loss = torch.mean(torch.tensor(log_losses))
+            optimizer.zero_grad()
+            log_loss.backward()
+            print("proto_learn loss is {np.array(log_losses).mean()}")
+            torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+            optimizer.step()
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
 
@@ -216,6 +249,7 @@ class Manager(object):
             
             history_relation = []
             proto4repaly = []
+            proto_dict = []
             start = time.time()
             for steps, (training_data, valid_data, test_data, current_relations, historic_test_data, seen_relations) in enumerate(sampler):
 
@@ -244,14 +278,13 @@ class Manager(object):
                 for relation in current_relations:
                     train_data_for_memory += memorized_samples[relation]
 
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
+                
             
                 proto_mem = []
 
                 for relation in current_relations:
                     memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    
+                    proto_dict[relation] = temp_proto
                     proto_mem.append(temp_proto)
 
                 
@@ -275,6 +308,9 @@ class Manager(object):
                 else:
                     protos4eval = temp_proto.to(args.device)
                 proto4repaly = protos4eval.clone()
+                
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
                 
                 test_data_1 = []
                 for relation in current_relations:
