@@ -188,6 +188,7 @@ class Manager(object):
                   log_losses.append(loss)
             log_loss = torch.mean(torch.tensor(log_losses))
             optimizer.zero_grad()
+            log_loss.requires_grad = True 
             log_loss.backward()
             print("proto_learn loss is {np.array(log_losses).mean()}")
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
