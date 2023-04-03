@@ -184,6 +184,7 @@ class Manager(object):
                 #print(tokens)
                 #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
                 fe, rp = encoder.bert_forward(tokens)
+                del tokens
                 #print(proto_dict[current_relation])
                 #print(fe.grad_fn)
                 
