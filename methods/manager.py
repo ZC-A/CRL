@@ -129,7 +129,7 @@ class Manager(object):
         optimizer = self.get_optimizer(args, encoder)
         def train_data(data_loader_, name = "", is_mem = False):
             losses = []
-            log_losses = []
+            #log_losses = []
             td = tqdm(data_loader_, desc=name)
             for step, batch_data in enumerate(td):
 
@@ -141,8 +141,8 @@ class Manager(object):
                 hidden, reps = encoder.bert_forward(tokens)
                 fe = hidden
                 hidden = reps
-                log_loss = []
-                '''
+                log_losses = []
+                
                 for i, f in enumerate(fe):
                   
                   loss = -torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-5)
@@ -151,8 +151,12 @@ class Manager(object):
                     if relation != np_lab[i]:
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
+                log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
+                log_losses = torch.mean(log_losses)
+                print(log_losses)
+                #log_losses.backward()
                 
-                '''
+                
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 
@@ -169,7 +173,7 @@ class Manager(object):
                     continue
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
-                loss.backward()
+               （loss + log_loss).backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
                 
@@ -189,76 +193,7 @@ class Manager(object):
             '''
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
-    def proto_study(self, args, encoder, memorized_samples, proto_dict):
-        encoder.train()
-        log_losses = []
-        optimizer = self.get_optimizer(args, encoder)
-        mem_loader = get_data_loader(args, memorized_samples, shuffle=True)
-        
-        td = tqdm(mem_loader)
-        for step, batch_data in enumerate(td):
-
-            labels, tokens, ind = batch_data
-            np_lab = labels.numpy().astype(int)
-            labels = labels.to(args.device)
-            tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
-            hidden, reps = encoder.bert_forward(tokens)
-            fe = hidden
-           
-            for i, f in enumerate(fe):
-
-              loss = -torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-5)
-
-              for relation in proto_dict.keys():
-                if relation != np_lab[i]:
-                  loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
-              log_losses.append(loss)
-         
-        optimizer.zero_grad()
-        log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
-        log_losses = torch.mean(log_losses)
-        print(log_losses)
-        log_losses.backward()
-        optimizer.step()
-        
-        
-        
-        
-    def proto_learn(self, args, encoder, memorized_samples, proto_dict):
-            encoder.train()
-            log_losses = []
-            #loss = Variable(torch.randn(1,1).cuda(), requires_grad=True)
-            optimizer = self.get_optimizer(args, encoder)
-            for current_relation in memorized_samples:
-                tokens = []
-                current_tokens = memorized_samples[current_relation]
-                for token in current_tokens:
-                  tokens.append(torch.tensor(token['tokens']))
-                tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
-                #tokens = [torch.tensor(x['tokens'] for x in current_tokens)]
-                #print(tokens)
-                #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
-                fe, rp = encoder.bert_forward(tokens)
-                del tokens
-                #print(proto_dict[current_relation])
-                #print(fe.grad_fn)
-                
-                for f in fe:
-                  
-                  loss = -torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-5)
-                    
-                  for relation in memorized_samples:
-                    if relation != current_relation:
-                      
-                      loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
-                  log_losses.append(loss)
-            log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
-            log_losses = torch.mean(log_losses)
-            optimizer.zero_grad()
-            print(log_losses)
-            log_losses.backward()
-            torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
-            optimizer.step()
+    
     @torch.no_grad()
     def evaluate_strict_model(self, args, encoder, test_data, protos4eval, seen_relations):
         data_loader = get_data_loader(args, test_data, batch_size=1)
@@ -371,7 +306,7 @@ class Manager(object):
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
-                self.proto_study(args, encoder, train_data_for_memory, proto_dict)
+                #self.proto_study(args, encoder, train_data_for_memory, proto_dict)
                 test_data_1 = []
                 for relation in current_relations:
                     test_data_1 += test_data[relation]
