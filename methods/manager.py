@@ -189,7 +189,7 @@ class Manager(object):
                     if relation != current_relation:
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
                   log_losses.append(loss)
-            loss = log.mean(torch.tensor(log_losses)) 
+            loss = torch.log.mean(torch.tensor(log_losses)) 
             optimizer.zero_grad()
             print(loss)
             #loss.mean().backward()
