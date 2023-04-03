@@ -167,8 +167,8 @@ class Manager(object):
                     self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
             
-            encoder.train()
-            loss = torch.randn(1,1).cuda(), requires_grad=True)
+            #encoder.train()
+            loss = torch.randn(1,1).cuda(), requires_grad=True))
             for current_relation in memorized_samples:
                 tokens = []
                 current_tokens = memorized_samples[current_relation]
