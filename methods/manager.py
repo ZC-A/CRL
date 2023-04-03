@@ -181,7 +181,7 @@ class Manager(object):
                 print(fe.grad_fn)
         
                 for f in fe:
-                  loss = -torch.log(torch.tensor(torch.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)) + 1e-5))
+                  loss = -torch.log(torch.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)) + 1e-5)
                   '''
                   for relation in memorized_samples:
                     if relation != current_relation:
