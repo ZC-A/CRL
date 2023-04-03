@@ -189,6 +189,41 @@ class Manager(object):
             '''
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
+    def proto_study(self, args, encoder, memorized_samples, proto_dict):
+        encoder.train()
+        log_losses = []
+        optimizer = self.get_optimizer(args, encoder)
+        mem_loader = get_data_loader(args, memorized_samples, shuffle=True)
+        
+        td = tqdm(data_loader_, desc=name)
+        for step, batch_data in enumerate(td):
+
+            labels, tokens, ind = batch_data
+            np_lab = labels.numpy().astype(int)
+            labels = labels.to(args.device)
+            tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
+            hidden, reps = encoder.bert_forward(tokens)
+            fe = hidden
+           
+            for i, f in enumerate(fe):
+
+              loss = -torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-5)
+
+              for relation in proto_dict.keys():
+                if relation != np_lab[i]:
+                  loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
+              log_losses.append(loss)
+         
+        optimizer.zero_grad()
+        log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
+        log_losses = torch.mean(log_losses)
+        print(log_losses)
+        log_losses.backward()
+        optimizer.step()
+        
+        
+        
+        
     def proto_learn(self, args, encoder, memorized_samples, proto_dict):
             encoder.train()
             log_losses = []
@@ -309,7 +344,7 @@ class Manager(object):
 
                 for relation in current_relations:
                     memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    proto_dict[relation] = temp_proto
+                    proto_dict[self.rel2id[relation]] = temp_proto
                     proto_mem.append(temp_proto)
 
                 
@@ -336,7 +371,7 @@ class Manager(object):
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
-                self.proto_learn(args, encoder, memorized_samples, proto_dict)
+                self.proto_study(args, encoder, train_data_for_memory, proto_dict)
                 test_data_1 = []
                 for relation in current_relations:
                     test_data_1 += test_data[relation]
