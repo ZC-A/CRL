@@ -168,7 +168,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
             
             #encoder.train()
-            loss = torch.randn(1,1).cuda(), requires_grad=True))
+            loss = Variable(torch.randn(1,1).cuda(), requires_grad=True))
             for current_relation in memorized_samples:
                 tokens = []
                 current_tokens = memorized_samples[current_relation]
