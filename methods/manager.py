@@ -309,7 +309,7 @@ class Manager(object):
 
                 for relation in current_relations:
                     memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    proto_dict[self.rel2id[relation]] = temp_proto
+                    proto_dict[relation] = temp_proto
                     proto_mem.append(temp_proto)
 
                 
