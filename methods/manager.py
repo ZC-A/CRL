@@ -178,21 +178,28 @@ class Manager(object):
                 #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
                 fe, rp = encoder.bert_forward(tokens)
                 #print(proto_dict[current_relation])
-                #print(fe)
+                print(fe.grad_fn)
         
                 for f in fe:
-                  loss = torch.log(torch.tensor(torch.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)).item() + 1e-5))
+                  loss = -torch.log(torch.tensor(torch.cosine_similarity(f.unsqueeze(0), proto_dict[current_relation].to(args.device).unsqueeze(0)).item() + 1e-5))
+                  '''
                   for relation in memorized_samples:
                     if relation != current_relation:
                       loss += torch.log(torch.tensor(1 - torch.cosine_similarity(f.unsqueeze(0), proto_dict[relation].to(args.device).unsqueeze(0)).item() + 1e-5))
                   log_losses.append(loss)
-            log_loss = torch.mean(torch.tensor(log_losses))
-            optimizer.zero_grad()
+                  '''
+                  optimizer.zero_grad()
+                  loss.backward()
+                  torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+                  optimizer.step()
+                  
+            #log_loss = torch.mean(torch.tensor(log_losses))
+            #optimizer.zero_grad()
            # log_loss.requires_grad = True 
-            log_loss.backward()
-            print(f"proto_learn loss is {np.array(log_losses).mean()}")
-            torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
-            optimizer.step()
+            #log_loss.backward()
+            #print(f"proto_learn loss is {np.array(log_losses).mean()}")
+            #torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+            #optimizer.step()
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
 
