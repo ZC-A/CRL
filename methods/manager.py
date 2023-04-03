@@ -135,7 +135,7 @@ class Manager(object):
 
                 optimizer.zero_grad()
                 labels, tokens, ind = batch_data
-                np_lab = int(labels.numpy())
+                np_lab = labels.numpy().astype(int)
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
