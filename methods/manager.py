@@ -166,7 +166,10 @@ class Manager(object):
                 else:
                     self.moment.update(ind, hidden.detach())
             print(f"{name} loss is {np.array(losses).mean()}")
-            
+                 
+        for epoch_i in range(epochs):
+            train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
+    def proto_learn(self, args, encoder, memorized_samples, proto_dict):
             encoder.train()
             #loss = Variable(torch.randn(1,1).cuda(), requires_grad=True)
             for current_relation in memorized_samples:
@@ -198,11 +201,6 @@ class Manager(object):
             log_losses.backward()
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
             optimizer.step()
-                  
-            
-        for epoch_i in range(epochs):
-            train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
-
     @torch.no_grad()
     def evaluate_strict_model(self, args, encoder, test_data, protos4eval, seen_relations):
         data_loader = get_data_loader(args, test_data, batch_size=1)
@@ -314,7 +312,7 @@ class Manager(object):
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 self.train_mem_model(args, encoder, train_data_for_memory, memorized_samples, proto_dict, args.step2_epochs, seen_relations)
-                
+                self.proto_learn(args, encoder, memorized_samples, proto_dict)
                 test_data_1 = []
                 for relation in current_relations:
                     test_data_1 += test_data[relation]
