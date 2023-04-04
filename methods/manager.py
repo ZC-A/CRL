@@ -293,6 +293,7 @@ class Manager(object):
                     if relation not in current_relations:
                         
                         protos, featrues = self.get_proto(args, encoder, memorized_samples[relation])
+                        proto_dict[self.rel2id[relation]] = protos
                         protos4eval.append(protos)
                         
                 
