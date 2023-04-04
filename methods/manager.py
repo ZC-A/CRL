@@ -152,6 +152,7 @@ class Manager(object):
                   for relation in proto_dict.keys():
                     if relation != np_lab[i]:
                       loss +=  -torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-5)
+                  print(loss)
                   log_losses.append(loss)
                 log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
                 log_losses = torch.mean(log_losses)
