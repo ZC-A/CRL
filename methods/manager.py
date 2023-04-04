@@ -144,7 +144,7 @@ class Manager(object):
                 fe = hidden
                 hidden = reps
                 log_losses = []
-                
+                '''
                 for i, f in enumerate(reps):
                   
                   loss = torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-5)
@@ -158,7 +158,7 @@ class Manager(object):
                 log_losses = -torch.mean(log_losses)
                 #print(log_losses)
                 #log_losses.backward()
-                
+                '''
                 
                 #  Contrastive Replay
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
@@ -176,7 +176,7 @@ class Manager(object):
                     continue
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
-                loss = loss + log_losses
+                #loss = loss + log_losses
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
