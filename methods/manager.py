@@ -33,7 +33,7 @@ class Manager(object):
                 feature, rep= encoder.bert_forward(tokens)
             features.append(feature)
             reps.append(rep)
-            self.lbs.append(labels.item())
+            #self.lbs.append(labels.item())
         features = torch.cat(features, dim=0)
         reps= torch.cat(reps, dim=0)
         proto = torch.mean(features, dim=0, keepdim=True)
