@@ -202,6 +202,36 @@ class Manager(object):
             '''
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
+    def proto_learn(args, memorized_samples, proto_dict, encoder):
+        encoder.train()
+        log_losses = []
+        optimizer = self.get_optimizer(args, encoder)
+        for current_relation in memorized_samples:
+            tokens = []
+            current_tokens = memorized_samples[current_relation]
+            for token in current_tokens:
+              tokens.append(torch.tensor(token['tokens']))
+            tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
+            #tokens = [torch.tensor(x['tokens'] for x in current_tokens)]
+            #print(tokens)
+            #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
+            fe, rp = encoder.bert_forward(tokens)
+
+            for i, f in enumerate(fe):
+
+              loss = torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-8)
+
+              for relation in proto_dict.keys():
+                if relation != current_relation:
+                  loss +=  torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-8)
+              #print(loss)
+              log_losses.append(loss)
+        log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
+        log_losses = -torch.mean(log_losses)
+        print(log_losses)
+        log_losses.backward()
+        torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+        optimizer.step()
     
     @torch.no_grad()
     def evaluate_strict_model(self, args, encoder, test_data, protos4eval, seen_relations):
@@ -282,14 +312,13 @@ class Manager(object):
                 for relation in current_relations:
                     train_data_for_memory += memorized_samples[relation]
 
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
+                
                 proto_mem = []
 
                 for relation in current_relations:
                     memorized_samples[relation], _, temp_proto = self.select_data(args, encoder, training_data[relation])
-                    _, _, reps = self.get_proto(args, encoder, memorized_samples[relation])
-                    proto_dict[self.rel2id[relation]] = reps[0]
+                    protos, _, reps = self.get_proto(args, encoder, memorized_samples[relation])
+                    proto_dict[relation] = proto[0]
                     proto_mem.append(temp_proto)
 
                 
@@ -302,7 +331,7 @@ class Manager(object):
                     if relation not in current_relations:
                         
                         protos, featrues, _ = self.get_proto(args, encoder, memorized_samples[relation])
-                        proto_dict[self.rel2id[relation]] = reps[0]
+                        proto_dict[relation] = protos[0]
                         protos4eval.append(protos)
                         
                 
@@ -315,9 +344,9 @@ class Manager(object):
                     protos4eval = temp_proto.to(args.device)
                 proto4repaly = protos4eval.clone()
                 
-                #self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                #self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
-                #self.proto_study(args, encoder, train_data_for_memory, proto_dict)
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
+                self.proto_study(args, memorized_samples, proto_dict, encoder)
                 test_data_1 = []
                 for relation in current_relations:
                     test_data_1 += test_data[relation]
