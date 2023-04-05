@@ -217,7 +217,7 @@ class Manager(object):
             #print(tokens)
             #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
             fe, rp = encoder.bert_forward(tokens)
-
+       '''
             for i, f in enumerate(fe):
 
               loss = torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-8)
@@ -233,7 +233,9 @@ class Manager(object):
         log_losses.backward()
         torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
         optimizer.step()
+        '''
     
+        print('inside proto learn')
     @torch.no_grad()
     def evaluate_strict_model(self, args, encoder, test_data, protos4eval, seen_relations):
         data_loader = get_data_loader(args, test_data, batch_size=1)
