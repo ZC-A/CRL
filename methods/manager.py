@@ -315,7 +315,8 @@ class Manager(object):
                 for relation in current_relations:
                     train_data_for_memory += memorized_samples[relation]
 
-                
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
                 proto_mem = []
 
                 for relation in current_relations:
@@ -347,8 +348,7 @@ class Manager(object):
                     protos4eval = temp_proto.to(args.device)
                 proto4repaly = protos4eval.clone()
                 
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
+                
                 #self.proto_study(args, memorized_samples, proto_dict, encoder)
                      
                 test_data_1 = []
