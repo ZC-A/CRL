@@ -202,12 +202,12 @@ class Manager(object):
             '''
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
-    def proto_study(self, args, memorized_samples, proto_dict, encoder):
+    def proto_study(self, args, memorized_samples, current_relations, proto_dict, encoder):
         torch.cuda.empty_cache()
         encoder.train()
         log_losses = []
         optimizer = self.get_optimizer(args, encoder)
-        for current_relation in memorized_samples:
+        for current_relation in current_relations:
             tokens = []
             current_tokens = memorized_samples[current_relation]
             for token in current_tokens:
@@ -217,12 +217,12 @@ class Manager(object):
             #print(tokens)
             #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
             fe, rp = encoder.bert_forward(tokens)
-        '''
+        
             for i, f in enumerate(fe):
 
               loss = torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-8)
 
-              for relation in proto_dict.keys():
+              for relation in current_relations:
                 if relation != current_relation:
                   loss +=  torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-8)
               #print(loss)
@@ -233,7 +233,7 @@ class Manager(object):
         log_losses.backward()
         torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
         optimizer.step()
-        '''
+        
     
         print('inside proto learn')
     @torch.no_grad()
@@ -349,7 +349,7 @@ class Manager(object):
                 proto4repaly = protos4eval.clone()
                 
                 
-                #self.proto_study(args, memorized_samples, proto_dict, encoder)
+                self.proto_study(args, memorized_samples, current_relations, proto_dict, encoder)
                      
                 test_data_1 = []
                 for relation in current_relations:
