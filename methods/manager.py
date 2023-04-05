@@ -202,7 +202,7 @@ class Manager(object):
             '''
         for epoch_i in range(epochs):
             train_data(mem_loader, "memory_train_{}".format(epoch_i), is_mem=True)
-    def proto_study(args, memorized_samples, proto_dict, encoder):
+    def proto_study(self, args, memorized_samples, proto_dict, encoder):
         encoder.train()
         log_losses = []
         optimizer = self.get_optimizer(args, encoder)
