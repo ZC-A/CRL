@@ -346,7 +346,7 @@ class Manager(object):
                 
                 self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
-                self.proto_study(args, memorized_samples, proto_dict, encoder)
+                self.proto_learn(args, memorized_samples, proto_dict, encoder)
                 test_data_1 = []
                 for relation in current_relations:
                     test_data_1 += test_data[relation]
