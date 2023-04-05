@@ -32,7 +32,7 @@ class Manager(object):
             with torch.no_grad():
                 feature, rep= encoder.bert_forward(tokens)
             features.append(feature)
-            #reps.append(rep)
+            reps.append(rep)
             #self.lbs.append(labels.item())
         features = torch.cat(features, dim=0)
         reps= torch.cat(reps, dim=0)
@@ -145,17 +145,7 @@ class Manager(object):
                 hidden = reps
                 log_losses = []
                 
-                for i, f in enumerate(reps):
-                  
-                  loss = torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-8)
-                    
-                  for relation in proto_dict.keys():
-                    if relation != np_lab[i]:
-                      loss +=  torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-8)
-                  #print(loss)
-                  log_losses.append(loss)
-                log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
-                log_losses = -torch.mean(log_losses)
+                
                 #print(log_losses)
                 #log_losses.backward()
                 
@@ -176,8 +166,22 @@ class Manager(object):
                     continue
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
-                loss = loss + log_losses
-                loss.backward()
+                
+                loss.backward(retain_graph=True)
+                
+                
+                for i, f in enumerate(reps):
+                  
+                  loss = torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-8)
+                    
+                  for relation in proto_dict.keys():
+                    if relation != np_lab[i]:
+                      loss +=  torch.log(1 - torch.cosine_similarity(f, proto_dict[relation].to(args.device), dim = 0) + 1e-8)
+                  #print(loss)
+                  log_losses.append(loss)
+                log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
+                log_losses = -torch.mean(log_losses)
+                log_losses.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
                 
