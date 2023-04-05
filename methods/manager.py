@@ -167,9 +167,9 @@ class Manager(object):
                 losses.append(loss.item())
                 td.set_postfix(loss = np.array(losses).mean())
                 
-                loss.backward(retain_graph=True)
+                loss.backward()
                 
-                
+                '''
                 for i, f in enumerate(reps):
                   
                   loss = torch.log(torch.cosine_similarity(f, proto_dict[np_lab[i]].to(args.device), dim = 0) + 1e-8)
@@ -182,6 +182,7 @@ class Manager(object):
                 log_losses = torch.cat(tuple([loss.reshape(1) for loss in log_losses]), dim = 0)
                 log_losses = -torch.mean(log_losses)
                 log_losses.backward()
+                '''
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
                 
@@ -281,8 +282,8 @@ class Manager(object):
                 for relation in current_relations:
                     train_data_for_memory += memorized_samples[relation]
 
-                
-            
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
                 proto_mem = []
 
                 for relation in current_relations:
@@ -314,8 +315,8 @@ class Manager(object):
                     protos4eval = temp_proto.to(args.device)
                 proto4repaly = protos4eval.clone()
                 
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
+                #self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                #self.train_mem_model(args, encoder, train_data_for_memory, proto_dict, args.step2_epochs, seen_relations)
                 #self.proto_study(args, encoder, train_data_for_memory, proto_dict)
                 test_data_1 = []
                 for relation in current_relations:
