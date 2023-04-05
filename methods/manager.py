@@ -120,7 +120,7 @@ class Manager(object):
             print(f"{name} loss is {np.array(losses).mean()}")
         for epoch_i in range(epochs):
             train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
-    def train_mem_model(self, args, encoder, mem_data, epochs, seen_relations):
+    def train_mem_model(self, args, encoder, mem_data, proto_dict, epochs, seen_relations):
         
         
         mem_loader = get_data_loader(args, mem_data, shuffle=True)
