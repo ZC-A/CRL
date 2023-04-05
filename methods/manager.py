@@ -217,7 +217,7 @@ class Manager(object):
             #print(tokens)
             #tokens = torch.stack([x.to(args.device) for x in tokens], dim = 0)
             fe, rp = encoder.bert_forward(tokens)
-       '''
+        '''
             for i, f in enumerate(fe):
 
               loss = torch.log(torch.cosine_similarity(f, proto_dict[current_relation].to(args.device), dim = 0) + 1e-8)
