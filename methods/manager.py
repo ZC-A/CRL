@@ -199,10 +199,10 @@ class Manager(object):
             test_cur = []
             test_total = []
             # set random seed
-            random.seed(args.seed+(i + 2)*100)
+            random.seed(args.seed+i*100)
 
             # sampler setup
-            sampler = data_sampler(args=args, seed=args.seed+(i + 2)*100)
+            sampler = data_sampler(args=args, seed=args.seed+i*100)
             self.id2rel = sampler.id2rel
             self.rel2id = sampler.rel2id
             # encoder setup
