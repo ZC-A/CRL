@@ -244,7 +244,8 @@ class Manager(object):
                 for relation in current_relations:
                     train_data_for_memory += memorized_samples[relation]
 
-                
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
             
                 proto_mem = []
 
@@ -283,8 +284,7 @@ class Manager(object):
                 for relation in seen_relations:
                     test_data_2 += historic_test_data[relation]
                    
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
+                
                 
                 cur_acc = self.evaluate_strict_model(args, encoder, test_data_1, protos4eval, seen_relations)
                 total_acc = self.evaluate_strict_model(args, encoder, test_data_2, protos4eval, seen_relations)
