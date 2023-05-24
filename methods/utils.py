@@ -61,18 +61,7 @@ class Moment:
             ct_x = self.mem_features
             ct_y = self.mem_labels
         else:
-            #if self.sample_k is not None:
-            # sample some instances
-            '''
-                idx = list(range(len(self.features)))
-                if len(idx) > self.sample_k:
-                    sample_id = random.sample(idx, self.sample_k)
-                else:
-                    sample_id = idx
-                ct_x = self.features[sample_id]
-                ct_y = self.labels[sample_id]
-                '''
-           # else:
+            
             ct_x = self.features
             ct_y = self.labels
 
