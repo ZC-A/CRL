@@ -105,24 +105,24 @@ class Manager(object):
                             {'params': classifier.parameters(), 'lr': 0.001}
                             ])
 
-    for epoch_i in range(epochs):
-        losses = []
-        for step, (labels, tokens) in enumerate(data_loader):
-            encoder.zero_grad()
-            classifier.zero_grad()
+        for epoch_i in range(epochs):
+            losses = []
+            for step, (labels, tokens) in enumerate(data_loader):
+                encoder.zero_grad()
+                classifier.zero_grad()
 
-            labels = labels.to(config.device)
-            tokens = torch.stack([x.to(config.device) for x in tokens],dim=0)
-            hidden, reps = encoder.bert_forward(tokens) = encoder(tokens)
-            logits = classifier(hidden)
+                labels = labels.to(config.device)
+                tokens = torch.stack([x.to(config.device) for x in tokens],dim=0)
+                hidden, reps = encoder.bert_forward(tokens) = encoder(tokens)
+                logits = classifier(hidden)
 
-            loss = criterion(logits, labels)
-            losses.append(loss.item())
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(encoder.parameters(), config.max_grad_norm)
-            torch.nn.utils.clip_grad_norm_(classifier.parameters(), config.max_grad_norm)
-            optimizer.step()
-        print(f"loss is {np.array(losses).mean()}")
+                loss = criterion(logits, labels)
+                losses.append(loss.item())
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(encoder.parameters(), config.max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(classifier.parameters(), config.max_grad_norm)
+                optimizer.step()
+            print(f"loss is {np.array(losses).mean()}")
        
     def train_mem_model(self, args, encoder, mem_data, proto_mem, epochs, seen_relations):
         
