@@ -1,6 +1,7 @@
 from dataloaders.sampler import data_sampler
 from dataloaders.data_loader import get_data_loader
 from .model import Encoder
+from .softmax_classifier import Softmax_Layer
 from .utils import Moment, dot_dist
 import time
 import torch
@@ -87,36 +88,42 @@ class Manager(object):
             params
         )
         return optimizer
-    def train_simple_model(self, args, encoder, training_data, epochs):
+    def train_simple_model(self, args, encoder, classifier,training_data, epochs):
 
         data_loader = get_data_loader(args, training_data, shuffle=True)
         encoder.train()
 
         optimizer = self.get_optimizer(args, encoder)
-        def train_data(data_loader_, name = "", is_mem = False):
-            losses = []
-            td = tqdm(data_loader_, desc=name)
-            for step, batch_data in enumerate(td):
-                optimizer.zero_grad()
-                labels, tokens, ind = batch_data
-                labels = labels.to(args.device)
-                tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
-                hidden, reps = encoder.bert_forward(tokens)
-                loss = self.moment.loss(reps, labels)
-                #print(loss)
-                losses.append(loss.item())
-                td.set_postfix(loss = np.array(losses).mean())
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
-                optimizer.step()
-                # update moemnt
-                if is_mem:
-                    self.moment.update_mem(ind, reps.detach())
-                else:
-                    self.moment.update(ind, reps.detach())
-            print(f"{name} loss is {np.array(losses).mean()}")
-        for epoch_i in range(epochs):
-            train_data(data_loader, "init_train_{}".format(epoch_i), is_mem=False)
+        
+
+    encoder.train()
+    classifier.train()
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam([
+                            {'params': encoder.parameters(), 'lr': 0.00001},
+                            {'params': classifier.parameters(), 'lr': 0.001}
+                            ])
+
+    for epoch_i in range(epochs):
+        losses = []
+        for step, (labels, tokens) in enumerate(data_loader):
+            encoder.zero_grad()
+            classifier.zero_grad()
+
+            labels = labels.to(config.device)
+            tokens = torch.stack([x.to(config.device) for x in tokens],dim=0)
+            hidden, reps = encoder.bert_forward(tokens) = encoder(tokens)
+            logits = classifier(hidden)
+
+            loss = criterion(logits, labels)
+            losses.append(loss.item())
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(encoder.parameters(), config.max_grad_norm)
+            torch.nn.utils.clip_grad_norm_(classifier.parameters(), config.max_grad_norm)
+            optimizer.step()
+        print(f"loss is {np.array(losses).mean()}")
+       
     def train_mem_model(self, args, encoder, mem_data, proto_mem, epochs, seen_relations):
         
         
@@ -213,7 +220,7 @@ class Manager(object):
             memorized_samples = {}
 
             # load data and start computation
-            
+            classifier = Softmax_Layer(input_size=args.output_size, num_class=args.num_of_relation).to(args.device)
             history_relation = []
             proto4repaly = []
             start = time.time()
