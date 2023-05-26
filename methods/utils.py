@@ -12,7 +12,7 @@ class Moment:
         self.labels = None
         self.mem_labels = None
         self.memlen = 0
-        self.sample_k = 500
+        
         self.temperature= args.temp
 
     def update(self, ind, feature, init=False):
@@ -66,8 +66,8 @@ class Moment:
             ct_y = self.labels
 
         device = torch.device("cuda") if x.is_cuda else torch.device("cpu")
-        dot_product_tempered = torch.mm(x, ct_x.T) / self.temperature  # n * m
-        # Minus max for numerical stability with exponential. Same done in cross entropy. Epsilon added to avoid log(0)
+        dot_product_tempered = torch.mm(x, ct_x.T) / self.temperature  
+        
         exp_dot_tempered = (
             torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0].detach()) + 1e-5
         )
@@ -90,7 +90,7 @@ def osdist(x, c):
 
     error_mask = pairwise_distances_squared <= 0.0
 
-    pairwise_distances = pairwise_distances_squared.clamp(min=1e-16)#.sqrt()
+    pairwise_distances = pairwise_distances_squared.clamp(min=1e-16)
 
     pairwise_distances = torch.mul(pairwise_distances, ~error_mask)
 
