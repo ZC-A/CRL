@@ -93,7 +93,7 @@ class Manager(object):
         data_loader = get_data_loader(args, training_data, shuffle=True)
         encoder.train()
 
-        optimizer = self.get_optimizer(args, encoder)
+        #optimizer = self.get_optimizer(args, encoder)
         
 
         encoder.train()
@@ -107,10 +107,12 @@ class Manager(object):
 
         for epoch_i in range(epochs):
             losses = []
-            for step, (labels, tokens) in enumerate(data_loader):
+            td = tqdm(data_loader, desc=name)
+            for step, batch_data in enumerate(td):
+                optimizer.zero_grad()
                 encoder.zero_grad()
                 classifier.zero_grad()
-
+                labels, tokens, ind = batch_data
                 labels = labels.to(config.device)
                 tokens = torch.stack([x.to(config.device) for x in tokens],dim=0)
                 hidden, reps = encoder.bert_forward(tokens) = encoder(tokens)
@@ -119,8 +121,8 @@ class Manager(object):
                 loss = criterion(logits, labels)
                 losses.append(loss.item())
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(encoder.parameters(), config.max_grad_norm)
-                torch.nn.utils.clip_grad_norm_(classifier.parameters(), config.max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(classifier.parameters(), args.max_grad_norm)
                 optimizer.step()
             print(f"loss is {np.array(losses).mean()}")
        
