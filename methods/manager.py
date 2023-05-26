@@ -19,7 +19,7 @@ class Manager(object):
         self.id2rel = None
         self.rel2id = None
     def get_proto(self, args, encoder, mem_set):
-        # aggregate the prototype set for further use.
+        
         data_loader = get_data_loader(args, mem_set, False, False, 1)
 
         features = []
@@ -37,7 +37,7 @@ class Manager(object):
         proto = torch.mean(features, dim=0, keepdim=True)
 
         return proto, features
-    # Use K-Means to select what samples to save, similar to at_least = 0
+    
     def select_data(self, args, encoder, sample_set):
         data_loader = get_data_loader(args, sample_set, shuffle=False, drop_last=False, batch_size=1)
         features = []
@@ -138,7 +138,7 @@ class Manager(object):
                 hidden, reps = encoder.bert_forward(tokens)
                 hidden = reps
                 
-                #  Contrastive Replay
+                
                 cl_loss = self.moment.loss(hidden, labels, is_mem=True, mapping=map_relid2tempid)
                 
                 loss = cl_loss
@@ -158,7 +158,7 @@ class Manager(object):
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
                 optimizer.step()
                 
-                # update moemnt
+                
                 if is_mem:
                     self.moment.update_mem(ind, hidden.detach())
                 else:
@@ -220,21 +220,19 @@ class Manager(object):
             for steps, (training_data, valid_data, test_data, current_relations, historic_test_data, seen_relations) in enumerate(sampler):
 
                 print(current_relations)
-                # Initial
+                
                 train_data_for_initial = []
                 for relation in current_relations:
                     history_relation.append(relation)
                     train_data_for_initial += training_data[relation]
-                # train model
-                # no memory. first train with current task
+                
                 self.moment = Moment(args)
                 self.moment.init_moment(args, encoder, train_data_for_initial, is_memory=False)
-                #add_aca_data = get_aca_data(args, deepcopy(training_data), current_relations, encoder)
-                #train_data_for_initial += add_aca_data
+                
                 self.train_simple_model(args, encoder, train_data_for_initial, args.step1_epochs)
-                # repaly
+                
              
-                # select current task sample
+                
                 for relation in current_relations:
                     memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
 
