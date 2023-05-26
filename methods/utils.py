@@ -71,7 +71,7 @@ class Moment:
         exp_dot_tempered = (
             torch.exp(dot_product_tempered - torch.max(dot_product_tempered, dim=1, keepdim=True)[0].detach()) + 1e-5
         )
-        mask_combined = (labels.unsqueeze(1).repeat(1, ct_y.shape[0]) == ct_y).to(device) # n*m
+        mask_combined = (labels.unsqueeze(1).repeat(1, ct_y.shape[0]) == ct_y).to(device) 
         cardinality_per_samples = torch.sum(mask_combined, dim=1)
 
         log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered, dim=1, keepdim=True)))
