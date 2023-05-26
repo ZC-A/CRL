@@ -88,43 +88,34 @@ class Manager(object):
             params
         )
         return optimizer
-    def train_simple_model(self, args, encoder, classifier,training_data, epochs):
+    def train_simple_model(self, args, encoder, training_data, epochs):
 
         data_loader = get_data_loader(args, training_data, shuffle=True)
         encoder.train()
 
-        #optimizer = self.get_optimizer(args, encoder)
-        
-
-        encoder.train()
-        classifier.train()
-
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam([
-                                {'params': encoder.parameters(), 'lr': 0.00001},
-                                {'params': classifier.parameters(), 'lr': 0.001}
-                                ])
-
-        for epoch_i in range(epochs):
+        optimizer = self.get_optimizer(args, encoder)
+        def train_data(data_loader_, name = "", is_mem = False):
             losses = []
-            td = tqdm(data_loader, desc=name)
+            td = tqdm(data_loader_, desc=name)
             for step, batch_data in enumerate(td):
                 optimizer.zero_grad()
-                encoder.zero_grad()
-                classifier.zero_grad()
                 labels, tokens, ind = batch_data
-                labels = labels.to(config.device)
-                tokens = torch.stack([x.to(config.device) for x in tokens],dim=0)
-                hidden, reps = encoder.bert_forward(tokens) = encoder(tokens)
-                logits = classifier(hidden)
-
-                loss = criterion(logits, labels)
+                labels = labels.to(args.device)
+                tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
+                hidden, reps = encoder.bert_forward(tokens)
+                loss = self.moment.loss(reps, labels)
+                #print(loss)
                 losses.append(loss.item())
+                td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
-                torch.nn.utils.clip_grad_norm_(classifier.parameters(), args.max_grad_norm)
                 optimizer.step()
-            print(f"loss is {np.array(losses).mean()}")
+                # update moemnt
+                if is_mem:
+                    self.moment.update_mem(ind, reps.detach())
+                else:
+                    self.moment.update(ind, reps.detach())
+            print(f"{name} loss is {np.array(losses).mean()}")
        
     def train_mem_model(self, args, encoder, mem_data, proto_mem, epochs, seen_relations):
         
@@ -243,18 +234,20 @@ class Manager(object):
                 self.train_simple_model(args, encoder, classifier, train_data_for_initial, args.step1_epochs)
                 # repaly
              
-                # select current task sample
-                for relation in current_relations:
-                    memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
+                if len(memorized_samples)>0:
+                    # select current task sample
+                    for relation in current_relations:
+                        memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
+                    
+                    train_data_for_memory = []
+                    for relation in history_relation:
+                        train_data_for_memory += memorized_samples[relation]
+                    
+                    self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                    self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
 
-                train_data_for_memory = []
-                for relation in history_relation:
-                    train_data_for_memory += memorized_samples[relation]
-                for relation in current_relations:
-                    train_data_for_memory += memorized_samples[relation]
-
-                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
+                #self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                #self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
             
                 proto_mem = []
 
