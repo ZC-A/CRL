@@ -88,34 +88,38 @@ class Manager(object):
             params
         )
         return optimizer
-    def train_simple_model(self, args, encoder, training_data, epochs):
+    def train_simple_model(self, args, encoder, classifier, training_data, epochs):
 
         data_loader = get_data_loader(args, training_data, shuffle=True)
-        encoder.train()
 
-        optimizer = self.get_optimizer(args, encoder)
-        def train_data(data_loader_, name = "", is_mem = False):
+        encoder.train()
+        classifier.train()
+        td = tqdm(data_loader, desc=name)
+
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam([
+                                {'params': encoder.parameters(), 'lr': 0.00001},
+                                {'params': classifier.parameters(), 'lr': 0.001}
+                                ])
+
+        for epoch_i in range(epochs):
             losses = []
-            td = tqdm(data_loader_, desc=name)
             for step, batch_data in enumerate(td):
-                optimizer.zero_grad()
+                encoder.zero_grad()
+                classifier.zero_grad()
                 labels, tokens, ind = batch_data
                 labels = labels.to(args.device)
-                tokens = torch.stack([x.to(args.device) for x in tokens], dim=0)
-                hidden, reps = encoder.bert_forward(tokens)
-                loss = self.moment.loss(reps, labels)
-                #print(loss)
+                tokens = torch.stack([x.to(args.device) for x in tokens],dim=0)
+                reps = encoder(tokens)
+                logits = classifier(reps)
+
+                loss = criterion(logits, labels)
                 losses.append(loss.item())
-                td.set_postfix(loss = np.array(losses).mean())
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(encoder.parameters(), args.max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(classifier.parameters(), args.max_grad_norm)
                 optimizer.step()
-                # update moemnt
-                if is_mem:
-                    self.moment.update_mem(ind, reps.detach())
-                else:
-                    self.moment.update(ind, reps.detach())
-            print(f"{name} loss is {np.array(losses).mean()}")
+            print(f"loss is {np.array(losses).mean()}")
        
     def train_mem_model(self, args, encoder, mem_data, proto_mem, epochs, seen_relations):
         
