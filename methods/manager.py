@@ -238,17 +238,16 @@ class Manager(object):
                 self.train_simple_model(args, encoder, classifier, train_data_for_initial, args.step1_epochs)
                 # repaly
              
-                if len(memorized_samples)>0:
-                    # select current task sample
-                    for relation in current_relations:
-                        memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
-                    
-                    train_data_for_memory = []
-                    for relation in history_relation:
-                        train_data_for_memory += memorized_samples[relation]
-                    
-                    self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
-                    self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
+               
+                for relation in current_relations:
+                    memorized_samples[relation], _, _ = self.select_data(args, encoder, training_data[relation])
+
+                train_data_for_memory = []
+                for relation in history_relation:
+                    train_data_for_memory += memorized_samples[relation]
+
+                self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
+                self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
 
                 #self.moment.init_moment(args, encoder, train_data_for_memory, is_memory=True)
                 #self.train_mem_model(args, encoder, train_data_for_memory, proto4repaly, args.step2_epochs, seen_relations)
