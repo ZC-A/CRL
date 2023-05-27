@@ -110,7 +110,7 @@ class Manager(object):
                 labels, tokens, ind = batch_data
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens],dim=0)
-                reps = encoder(tokens)
+                hidden, reps = encoder(tokens)
                 logits = classifier(reps)
 
                 loss = criterion(logits, labels)
@@ -217,7 +217,7 @@ class Manager(object):
             memorized_samples = {}
 
             # load data and start computation
-            classifier = Softmax_Layer(input_size=args.output_size, num_class=args.num_of_relation).to(args.device)
+            classifier = Softmax_Layer(input_size=args.encoder_output_size, num_class=args.num_of_relation).to(args.device)
             history_relation = []
             proto4repaly = []
             start = time.time()
