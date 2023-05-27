@@ -94,7 +94,7 @@ class Manager(object):
 
         encoder.train()
         classifier.train()
-        td = tqdm(data_loader, desc=name)
+        td = tqdm(data_loader)
 
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam([
