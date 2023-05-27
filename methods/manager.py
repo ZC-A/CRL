@@ -110,7 +110,7 @@ class Manager(object):
                 labels, tokens, ind = batch_data
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens],dim=0)
-                hidden, reps = encoder(tokens)
+                hidden, reps = encoder.bert_forward(tokens)
                 logits = classifier(reps)
 
                 loss = criterion(logits, labels)
