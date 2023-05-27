@@ -111,7 +111,7 @@ class Manager(object):
                 labels = labels.to(args.device)
                 tokens = torch.stack([x.to(args.device) for x in tokens],dim=0)
                 hidden, reps = encoder.bert_forward(tokens)
-                logits = classifier(reps)
+                logits = classifier(hidden)
 
                 loss = criterion(logits, labels)
                 losses.append(loss.item())
